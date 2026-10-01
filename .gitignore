@@ -1,0 +1,56 @@
+# Compiled Object Files and Libraries
+*.o
+*.obj
+*.slo
+*.lo
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+bin/
+lib/
+
+# CMake Build Artifacts
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CMakeConfigureLog.yaml
+InstallScripts.json
+pkgRedirects/
+TargetDirectories.txt
+rules.ninja
+.ninja_deps
+.ninja_log
+compile_commands.json
+CTestTestfile.cmake
+Makefile.cmake
+
+# Testing and Profiling
+Testing/
+*.gcda
+*.gcno
+*.gcov
+callgrind.out.*
+massif.out.*
+
+# IDE and Editor Configurations
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vs/
+*.swp
+*.swo
+*~
+
+# Operating System Files
+.DS_Store
+Thumbs.db
