@@ -1,6 +1,10 @@
-#include <iostream>
+#define SDL_MAIN_HANDLED // custom main point entry
+#include <SDL3/SDL_main.h>
+#include <iostream> 
+#include "client.hpp"
 
 int main() {
-    std::cout << "hello world\n";
+    bluff::Client client;
+    client.run(); 
     return 0;
 }
