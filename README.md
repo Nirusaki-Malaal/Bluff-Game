@@ -61,13 +61,22 @@ CPU mode introduces autonomous artificial intelligence agents capable of partici
 - Heuristic and Probabilistic Modeling: CPU agents evaluate bluff probabilities using Bayesian updates based on observed discard counts, known cards held in hand, declared ranks, and historical claim consistency of opponents.
 - Non-Blocking Background Evaluation: AI decision calculations execute on dedicated worker threads, ensuring that complex tree searches and statistical sampling do not degrade frame pacing.
 
-## Hardware-Accelerated Rendering Pipeline (SDL3)
+## Client Rendering Pipeline and Application Lifecycle (SDL3)
 
-The graphical interface is built directly on the Simple DirectMedia Layer 3 (SDL3) API, taking advantage of modern GPU-accelerated 2D rendering backends:
+The graphical interface is built directly on the Simple DirectMedia Layer 3 (SDL3) API. The client runtime implements a complete window management, frame loop, and teardown cycle:
 
-- Hardware Abstraction: Utilizes `SDL_Renderer` and `SDL_Texture` abstractions backed by platform-native APIs (Vulkan, OpenGL, Direct3D, or Metal) to ensure consistent high frame rates and minimal CPU overhead.
-- Decoupled Tick and Frame Architecture: The simulation executes at a fixed timestep (60 Hz) for deterministic state evaluation, while the rendering pipeline runs with variable display refresh rates. Visual card movement, pile drops, and UI highlights employ linear interpolation (lerp) across tick states to deliver fluid animations.
-- Resource Encapsulation: Texture atlases, fonts, and window contexts are managed via strict RAII (Resource Acquisition Is Initialization) wrappers, eliminating resource leaks and dangling handle dereferences across window lifecycle events.
+### Subsystem Initialization
+- Video Subsystem: Initialized through `SDL_Init(SDL_INIT_VIDEO)` to establish display server connections (Wayland, X11, Windows Display Driver, or Cocoa).
+- Fullscreen Window Creation: Instantiates `SDL_CreateWindow` under the title "Veil of Deceit" with the `SDL_WINDOW_FULLSCREEN` flag, querying native display resolution automatically without hardcoded display boundaries.
+- Direct Framebuffer and Surface Pipeline: Retrieves the underlying window drawing surface via `SDL_GetWindowSurface`. The frame loop clears the surface to a dark slate background vector `(0.12f, 0.16f, 0.24f, 1.0f)` using `SDL_ClearSurface` and pushes updates to the display with `SDL_UpdateWindowSurface`.
+
+### Event Polling and Frame Pacing
+- Event Queue Ingestion: Zero-initialized `SDL_Event` structures process window management and system signals via `SDL_PollEvent(&event)`. The client catches `SDL_EVENT_QUIT` to initiate a clean shutdown sequence.
+- Frame Pacing: Execution introduces a fixed delay of 16 ms via `SDL_Delay(16)` per iteration, capping the polling frequency to approximately 60 frames per second to conserve CPU resources during idle states.
+
+### Entry Point and RAII Teardown
+- Custom Entry Point: The main executable defines `#define SDL_MAIN_HANDLED` prior to including `<SDL3/SDL_main.h>`, bypassing platform-specific runtime wrapper macros and executing standard C++ application bootstrap.
+- Deterministic Lifecycle Teardown: The `bluff::Client` destructor enforces explicit resource cleanup: cached image surfaces (`SDL_DestroySurface`), native display windows (`SDL_DestroyWindow`), and complete SDL subsystem deregistration (`SDL_Quit()`).
 
 ## Core Computer Science and Systems Concepts
 
@@ -162,7 +171,11 @@ cmake --build build
 Alternatively, use the provided Makefile:
 
 ```bash
+# Compile project
 make build
+
+# Clean build artifacts
+make clean
 ```
 
 ### Execution
@@ -177,3 +190,12 @@ Or execute via Make:
 ```bash
 make run
 ```
+
+## Template Branch for Game Projects
+
+This repository snapshot is published on GitHub as a dedicated `template` branch to serve as a standardized baseline for future native C++ game projects using SDL3:
+
+- Decoupled CMake Architecture: Discrete subprojects for shared protocol definitions (`common`), backend simulation daemons (`server`), and client engines (`client`).
+- SDL3 Video and Event Loop Foundation: Subsystem initialization, fullscreen window configuration, zero-initialized event polling, and RAII cleanup wrappers.
+- Build Automation: Ready-to-use Makefile with `build`, `run`, and `clean` rules backed by Ninja and CMake.
+- Branch Reference: The `template` branch can be checked out or branched directly when bootstrapping new game projects.
