@@ -53,7 +53,11 @@ namespace bluff {
                 }
                 else if(event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || 
                     event.type == SDL_EVENT_WINDOW_RESIZED) {
-                gScreenSurface = nullptr;
+                    gScreenSurface = nullptr;
+                }
+                else if(event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
+                {
+                    is_running = false;
                 }
             }
             if (gScreenSurface == nullptr) {
