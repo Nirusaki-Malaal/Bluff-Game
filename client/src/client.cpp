@@ -1,12 +1,13 @@
 #include <iostream>
 #include "client.hpp"
 #include <SDL3/SDL.h>
+
 namespace bluff {
     Client::Client() 
     {
         gWindow = nullptr; // the window we will be rendering
         gScreenSurface = nullptr; // the surface in the window
-        gHelloWorld = nullptr; // image we will be loading
+        gMainMenu = nullptr; // image we will be loading
         // g means global here these variable are global
         std::cout << "Client initialized!\n";
          // NAME Of the game
@@ -78,9 +79,9 @@ namespace bluff {
     Client::~Client() {
 
         // this is my object
-        if(gHelloWorld) {
-            SDL_DestroySurface(gHelloWorld);
-            gHelloWorld = nullptr;
+        if(gMainMenu) {
+            SDL_DestroySurface(gMainMenu);
+            gMainMenu = nullptr;
         }
 
         if(gWindow) {

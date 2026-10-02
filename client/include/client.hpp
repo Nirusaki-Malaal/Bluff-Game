@@ -9,7 +9,7 @@ namespace bluff {
             ~Client();
         private:
             bool init();
-            SDL_Surface* gHelloWorld;
+            SDL_Surface* gMainMenu;
             SDL_Window* gWindow;
             SDL_Surface* gScreenSurface;
             static constexpr const char* kWindowName = "Veil of Deceit"; // client class constructor k means constant here and S
