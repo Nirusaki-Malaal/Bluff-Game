@@ -40,6 +40,12 @@ namespace bluff {
             return 1;
         }
         // creating an event loop which will look this thing
+
+        gMainMenu = SDL_LoadBMP("assets/main_menu.bmp");
+        if(gMainMenu == nullptr) {
+            SDL_Log("Error Loading The Main Menu Image is Not there %s", SDL_GetError());
+        }
+
         bool is_running = true;
         bool fullscreen_applied = false;
         SDL_Event event;
@@ -51,11 +57,10 @@ namespace bluff {
                 {
                     is_running = false;
                 }
-                else if(event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || 
-                    event.type == SDL_EVENT_WINDOW_RESIZED) {
+                else if(event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type == SDL_EVENT_WINDOW_RESIZED) {
                     gScreenSurface = nullptr;
                 }
-                else if(event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
+                else if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_ESCAPE)
                 {
                     is_running = false;
                 }
@@ -65,9 +70,17 @@ namespace bluff {
             }
 
             if (gScreenSurface != nullptr) {
-                SDL_ClearSurface(gScreenSurface, 0.12f, 0.16f, 0.24f, 1.0f);
+                SDL_ClearSurface(gScreenSurface, 0.0f, 0.0f, 0.0f, 1.0f); // background colour filling
+                if(gMainMenu != nullptr) {
+                    SDL_Rect image_rect;
+                    image_rect.w = gScreenSurface->w; // image width 
+                    image_rect.h = gScreenSurface->h; // image height
+                    image_rect.x = 0; // i want to fill stretch the image
+                    image_rect.y = 0;
+                    SDL_BlitSurfaceScaled(gMainMenu , nullptr,gScreenSurface, &image_rect, SDL_SCALEMODE_LINEAR);
+                }
                 SDL_UpdateWindowSurface(gWindow);
-
+            
             if (!fullscreen_applied) {
                 SDL_SetWindowFullscreen(gWindow, true);
                 fullscreen_applied = true;
