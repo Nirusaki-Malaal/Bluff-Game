@@ -28,9 +28,6 @@ namespace bluff {
                 SDL_Log("[SDL] [ERROR] Window could not be created");
                 success = false;
             }
-            else {
-                gScreenSurface = SDL_GetWindowSurface(gWindow); // get window surface
-            }
         }
         return success;
     }
@@ -43,6 +40,7 @@ namespace bluff {
         }
         // creating an event loop which will look this thing
         bool is_running = true;
+        bool fullscreen_applied = false;
         SDL_Event event;
         SDL_zero(event); // initalize the memory reigon to zero
         while(is_running)
@@ -52,9 +50,25 @@ namespace bluff {
                 {
                     is_running = false;
                 }
+                else if(event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || 
+                    event.type == SDL_EVENT_WINDOW_RESIZED) {
+                gScreenSurface = nullptr;
+                }
             }
-        SDL_ClearSurface(gScreenSurface, 0.12f, 0.16f, 0.24f, 1.0f);
-        SDL_UpdateWindowSurface(gWindow);
+            if (gScreenSurface == nullptr) {
+            gScreenSurface = SDL_GetWindowSurface(gWindow);
+            }
+
+            if (gScreenSurface != nullptr) {
+                SDL_ClearSurface(gScreenSurface, 0.12f, 0.16f, 0.24f, 1.0f);
+                SDL_UpdateWindowSurface(gWindow);
+
+            if (!fullscreen_applied) {
+                SDL_SetWindowFullscreen(gWindow, true);
+                fullscreen_applied = true;
+            }
+            }
+
         SDL_Delay(16);
         }
         return 0; // success 

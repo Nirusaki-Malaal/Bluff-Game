@@ -68,10 +68,11 @@ The graphical interface is built directly on the Simple DirectMedia Layer 3 (SDL
 ### Subsystem Initialization
 - Video Subsystem: Initialized through `SDL_Init(SDL_INIT_VIDEO)` to establish display server connections (Wayland, X11, Windows Display Driver, or Cocoa).
 - Fullscreen Window Creation: Instantiates `SDL_CreateWindow` under the title "Veil of Deceit" with the `SDL_WINDOW_FULLSCREEN` flag, querying native display resolution automatically without hardcoded display boundaries.
-- Direct Framebuffer and Surface Pipeline: Retrieves the underlying window drawing surface via `SDL_GetWindowSurface`. The frame loop clears the surface to a dark slate background vector `(0.12f, 0.16f, 0.24f, 1.0f)` using `SDL_ClearSurface` and pushes updates to the display with `SDL_UpdateWindowSurface`.
+- Deferred Surface Pipeline: Avoids compositor race conditions on Wayland by deferring `SDL_GetWindowSurface` calls until the event loop dispatch rather than requesting handles synchronously during creation. The frame loop clears the active surface to a dark slate background vector `(0.12f, 0.16f, 0.24f, 1.0f)` using `SDL_ClearSurface` and pushes updates to the display with `SDL_UpdateWindowSurface`.
 
 ### Event Polling and Frame Pacing
 - Event Queue Ingestion: Zero-initialized `SDL_Event` structures process window management and system signals via `SDL_PollEvent(&event)`. The client catches `SDL_EVENT_QUIT` to initiate a clean shutdown sequence.
+- Wayland Surface and Resize Handling: Monitors `SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED` and `SDL_EVENT_WINDOW_RESIZED` to invalidate stale surface pointers, safely re-querying `SDL_GetWindowSurface` on subsequent frames to prevent NULL dereferences and display tearing.
 - Frame Pacing: Execution introduces a fixed delay of 16 ms via `SDL_Delay(16)` per iteration, capping the polling frequency to approximately 60 frames per second to conserve CPU resources during idle states.
 
 ### Entry Point and RAII Teardown
