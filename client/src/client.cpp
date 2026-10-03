@@ -8,6 +8,10 @@ namespace bluff {
         gWindow = nullptr; // the window we will be rendering
         gScreenSurface = nullptr; // the surface in the window
         gMainMenu = nullptr; // image we will be loading
+        gFog = nullptr;
+        gVignette = nullptr;
+        gGlow = nullptr;
+
         // g means global here these variable are global
         std::cout << "Client initialized!\n";
          // NAME Of the game
@@ -42,9 +46,14 @@ namespace bluff {
         // creating an event loop which will look this thing
 
         gMainMenu = SDL_LoadBMP("assets/main_menu.bmp");
-        if(gMainMenu == nullptr) {
-            SDL_Log("Error Loading The Main Menu Image is Not there %s", SDL_GetError());
-        }
+        gGlow = SDL_LoadBMP("assets/candle_glow.bmp");
+        gFog = SDL_LoadBMP("assets/fog.bmp");
+        gVignette = SDL_LoadBMP("assets/vignette.bmp");
+
+        if(gMainMenu == nullptr) SDL_Log("Error Loading The Main Menu Image is Not there %s", SDL_GetError());
+        if(gFog) SDL_SetSurfaceBlendMode(gFog, SDL_BLENDMODE_BLEND);
+        if(gVignette) SDL_SetSurfaceBlendMode(gVignette, SDL_BLENDMODE_MOD);
+        if(gGlow) SDL_SetSurfaceBlendMode(gGlow, SDL_BLENDMODE_ADD);
 
         bool is_running = true;
         bool fullscreen_applied = false;
@@ -104,6 +113,18 @@ namespace bluff {
         if(gWindow) {
             SDL_DestroyWindow(gWindow);
             gWindow = nullptr;
+        }
+        if(gFog) {
+            SDL_DestroySurface(gFog);
+            gFog = nullptr;
+        }
+        if(gVignette) {
+            SDL_DestroySurface(gVignette);
+            gVignette = nullptr;
+        }
+        if(gGlow) {
+            SDL_DestroySurface(gGlow);
+            gGlow = nullptr;
         }
         gScreenSurface = nullptr;  // this owned by window internally so freeing up window will free this as well
         SDL_Quit(); // quits the sdl3 library
