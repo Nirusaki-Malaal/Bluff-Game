@@ -1,5 +1,6 @@
 #include <iostream>
 #include "client.hpp"
+#include <cmath>
 #include <SDL3/SDL.h>
 
 namespace bluff {
@@ -88,6 +89,41 @@ namespace bluff {
                     image_rect.y = 0;
                     SDL_BlitSurfaceScaled(gMainMenu , nullptr,gScreenSurface, &image_rect, SDL_SCALEMODE_LINEAR);
                 }
+
+                if(gGlow != nullptr) {
+                    // normalized wick centers in main_menu.bmp (x / 1672, y / 941). , (x / width_of_image, y / height_of_image)
+                    constexpr SDL_FPoint glow_points[] = {
+                        {0.017f, 0.391f}, // far-left candle
+                        {0.054f, 0.404f}, // foreground candle
+                        {0.081f, 0.176f}, // shelf candle
+                        {0.147f, 0.433f}, // small left candle
+                        {0.430f, 0.318f}, // center candle
+                        {0.477f, 0.420f}, // candle in center cluster
+                        {0.961f, 0.271f}  // right candle
+                    };
+                    SDL_Rect glow_point;
+                    for(int i = 0; i < std::size(glow_points); i++)
+                    {
+                        // fun fact blit means bit block transfer
+                        constexpr uint8_t GLOW_TRANSPARENCY = 64;
+                        constexpr float PI = 3.14f;
+                        constexpr float speed = 3.25f;
+                        
+                        float current_time = SDL_GetTicks()/1000.0f ; // convert to millisecond
+                        float phase = current_time * speed  + (i  * 0.75f  * PI); // wt + randomoffset * i; 3/4pi
+                        float wave = std::sin(phase); // since sin output is from -1 to 1 we cant have intensity b/w -1 to 1 so we normalize it 0 to 1
+                        float scale = 0.5f + (wave*wave)*0.5f; // scaling down the wave to 0.5 so we can have a base intensity of 0.5 total range is now 0.5 to 1.0
+
+                        glow_point.w = gGlow->w;
+                        glow_point.h = gGlow->h;
+                        glow_point.x = (glow_points[i].x * gScreenSurface->w) - (gGlow->w / 2) ;
+                        glow_point.y = (glow_points[i].y * gScreenSurface->h) - (gGlow->h / 2);
+
+                        SDL_SetSurfaceAlphaMod(gGlow, GLOW_TRANSPARENCY * scale);
+                        SDL_BlitSurfaceScaled(gGlow , nullptr,gScreenSurface, &glow_point, SDL_SCALEMODE_LINEAR);   
+                    }
+                }
+
                 SDL_UpdateWindowSurface(gWindow);
             
             if (!fullscreen_applied) {
