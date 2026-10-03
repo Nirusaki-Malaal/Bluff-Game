@@ -1,9 +1,80 @@
 #include <iostream>
 #include "client.hpp"
 #include <cmath>
+#include <vector>
 #include <SDL3/SDL.h>
 
 namespace bluff {
+
+struct GothicButton {
+        SDL_FRect rect;
+        bool is_hovered = false;
+        bool is_clicked = false;
+    };
+
+    static void DrawDiamond(SDL_Renderer* renderer, float cx, float cy, float size, SDL_FColor color) {
+        // create a basic structure
+        SDL_SetRenderDrawColorFloat(renderer, color.r, color.g, color.b, color.a);
+        for (float dy = -size; dy <= size; dy += 1.0f) {
+            float width = size - std::abs(dy);
+            SDL_RenderLine(renderer, cx - width, cy + dy, cx + width, cy + dy);
+        }
+    }
+
+    static void DrawGothicButton(SDL_Renderer* renderer, const GothicButton& btn) {
+        float x = btn.rect.x;
+        float y = btn.rect.y;
+        float w = btn.rect.w;
+        float h = btn.rect.h;
+        float tip = h * 0.28f; 
+
+        // colors
+        SDL_FColor borderColor = btn.is_hovered ? SDL_FColor{0.96f, 0.80f, 0.47f, 1.0f}  : SDL_FColor{0.58f, 0.45f, 0.23f, 0.85f}; 
+
+        SDL_FColor cCenter = btn.is_hovered 
+            ? SDL_FColor{0.50f, 0.08f, 0.10f, 0.95f}  // deep crimson/wine glow
+            : SDL_FColor{0.11f, 0.08f, 0.10f, 0.90f}; // smoky charcoal/slate
+
+        SDL_FColor cEdge = SDL_FColor{0.04f, 0.03f, 0.04f, 0.95f}; // dark vignette 
+
+        // 7 vetices 1 center 6 perimeter tipped
+        SDL_Vertex verts[7] = {
+            { {x + w * 0.5f, y + h * 0.5f}, cCenter, {0, 0} }, // 0: Center
+            { {x + tip,     y},             cEdge,   {0, 0} }, // 1: Top-Left
+            { {x + w - tip, y},             cEdge,   {0, 0} }, // 2: Top-Right
+            { {x + w,       y + h * 0.5f},  cEdge,   {0, 0} }, // 3: Right Tip
+            { {x + w - tip, y + h},         cEdge,   {0, 0} }, // 4: Bottom-Right
+            { {x + tip,     y + h},         cEdge,   {0, 0} }, // 5: Bottom-Left
+            { {x,           y + h * 0.5f},  cEdge,   {0, 0} }  // 6: Left Tip
+        };
+
+        int indices[18] = {
+            0, 1, 2,  // Top segment
+            0, 2, 3,  // Top-right tip
+            0, 3, 4,  // Bottom-right tip
+            0, 4, 5,  // Bottom segment
+            0, 5, 6,  // Bottom-left tip
+            0, 6, 1   // Top-left tip
+        };
+
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_RenderGeometry(renderer, nullptr, verts, 7, indices, 18);
+        SDL_FPoint outline[7] = {
+            {x + tip,     y},
+            {x + w - tip, y},
+            {x + w,       y + h * 0.5f},
+            {x + w - tip, y + h},
+            {x + tip,     y + h},
+            {x,           y + h * 0.5f},
+            {x + tip,     y}
+        };
+
+        SDL_SetRenderDrawColorFloat(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_RenderLines(renderer, outline, 7);
+        DrawDiamond(renderer, x + w * 0.5f, y, 3.5f, borderColor);
+        DrawDiamond(renderer, x + w * 0.5f, y + h, 3.5f, borderColor);
+    }
+
     Client::Client() 
     {
         gWindow = nullptr; // the window we will be rendering
@@ -56,12 +127,15 @@ namespace bluff {
         if(gVignette) SDL_SetSurfaceBlendMode(gVignette, SDL_BLENDMODE_MOD);
         if(gGlow) SDL_SetSurfaceBlendMode(gGlow, SDL_BLENDMODE_ADD);
 
+        std::vector<GothicButton> buttons(3);
         bool is_running = true;
         bool fullscreen_applied = false;
         SDL_Event event;
         SDL_zero(event); // initalize the memory reigon to zero
         while(is_running)
         {
+            float mouseX = 0.0f, mouseY = 0.0f;
+            SDL_GetMouseState(&mouseX, &mouseY);
             while(SDL_PollEvent(&event) == true) {
                 if(event.type == SDL_EVENT_QUIT)
                 {
@@ -78,9 +152,9 @@ namespace bluff {
             if (gScreenSurface == nullptr) {
             gScreenSurface = SDL_GetWindowSurface(gWindow);
             }
-
             if (gScreenSurface != nullptr) {
                 SDL_ClearSurface(gScreenSurface, 0.0f, 0.0f, 0.0f, 1.0f); // background colour filling
+
                 if(gMainMenu != nullptr) {
                     SDL_Rect image_rect;
                     image_rect.w = gScreenSurface->w; // image width 
@@ -88,8 +162,8 @@ namespace bluff {
                     image_rect.x = 0; // i want to fill stretch the image
                     image_rect.y = 0;
                     SDL_BlitSurfaceScaled(gMainMenu , nullptr,gScreenSurface, &image_rect, SDL_SCALEMODE_LINEAR);
-                }
 
+                }
                 if(gGlow != nullptr) {
                     // normalized wick centers in main_menu.bmp (x / 1672, y / 941). , (x / width_of_image, y / height_of_image)
                     constexpr SDL_FPoint glow_points[] = {
@@ -121,7 +195,33 @@ namespace bluff {
 
                         SDL_SetSurfaceAlphaMod(gGlow, GLOW_TRANSPARENCY * scale);
                         SDL_BlitSurfaceScaled(gGlow , nullptr,gScreenSurface, &glow_point, SDL_SCALEMODE_LINEAR);   
+                        
+                         // 0 to 255 alpha transparency
+                        // sine wave = Asin(wt + phase); set A = 1
                     }
+
+                }   
+                //buttons multiplied by their floating points
+                float btnW = gScreenSurface->w * 0.18f;
+                float btnH = gScreenSurface->h * 0.055f;
+                float startX = gScreenSurface->w * 0.138f;
+                float startY = gScreenSurface->h * 0.415f;
+                float gap = btnH * 0.24f;
+
+                for (size_t i = 0; i < buttons.size(); ++i) {
+                    buttons[i].rect = { startX, startY + i * (btnH + gap), btnW, btnH };
+                    SDL_Point mouse_pt = { (int)mouseX, (int)mouseY };
+                    SDL_Rect btn_r = { (int)buttons[i].rect.x, (int)buttons[i].rect.y, (int)buttons[i].rect.w, (int)buttons[i].rect.h };
+                    buttons[i].is_hovered = SDL_PointInRect(&mouse_pt, &btn_r);
+                }
+
+                // Render the 3 buttons directly onto the surface
+                SDL_Renderer* surface_renderer = SDL_CreateSoftwareRenderer(gScreenSurface);
+                if (surface_renderer != nullptr) {
+                    for (const auto& btn : buttons) {
+                        DrawGothicButton(surface_renderer, btn);
+                    }
+                    SDL_DestroyRenderer(surface_renderer);
                 }
 
                 SDL_UpdateWindowSurface(gWindow);

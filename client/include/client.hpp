@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 
 namespace bluff {
+    struct MainMenuButton;
     class Client {
         public:
             Client();
